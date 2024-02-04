@@ -1,10 +1,10 @@
 import { Component, OnInit } from "@angular/core";
-import { Course, sortCoursesBySeqNo } from "../model/course";
+
 import { Observable } from "rxjs";
 import { map } from "rxjs/operators";
-import { MatDialog, MatDialogConfig } from "@angular/material/dialog";
-import { CourseDialogComponent } from "../course-dialog/course-dialog.component";
+
 import { CourseService } from "../services/course.service";
+import { Course, sortCoursesBySeqNo } from "../model/course";
 
 @Component({
   selector: "home",
@@ -15,10 +15,7 @@ export class HomeComponent implements OnInit {
   public beginnerCourses$: Observable<Course[]>;
   public advancedCourses$: Observable<Course[]>;
 
-  constructor(
-    private readonly coureService: CourseService,
-    private readonly dialog: MatDialog
-  ) {}
+  constructor(private readonly coureService: CourseService) {}
 
   private filterByCategory(category: string, courses: Course[]) {
     return courses
@@ -36,17 +33,5 @@ export class HomeComponent implements OnInit {
     this.advancedCourses$ = courses$.pipe(
       map(this.filterByCategory.bind(this, "ADVANCED"))
     );
-  }
-
-  editCourse(course: Course) {
-    const dialogConfig = new MatDialogConfig();
-
-    dialogConfig.disableClose = true;
-    dialogConfig.autoFocus = true;
-    dialogConfig.width = "400px";
-
-    dialogConfig.data = course;
-
-    const dialogRef = this.dialog.open(CourseDialogComponent, dialogConfig);
   }
 }
