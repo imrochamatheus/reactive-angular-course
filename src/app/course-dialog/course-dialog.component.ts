@@ -7,11 +7,13 @@ import { finalize, tap } from "rxjs/operators";
 
 import { Course } from "../model/course";
 import { CourseService } from "../services/course.service";
+import { loadingService } from "../services/loading.service";
 
 @Component({
   selector: "course-dialog",
   templateUrl: "./course-dialog.component.html",
   styleUrls: ["./course-dialog.component.css"],
+  providers: [loadingService],
 })
 export class CourseDialogComponent implements AfterViewInit {
   public form: FormGroup;
@@ -20,6 +22,7 @@ export class CourseDialogComponent implements AfterViewInit {
   constructor(
     private readonly fb: FormBuilder,
     private readonly courseService: CourseService,
+    private readonly loadingService: loadingService,
     private readonly dialogRef: MatDialogRef<CourseDialogComponent>,
 
     @Inject(MAT_DIALOG_DATA) course: Course
@@ -40,12 +43,14 @@ export class CourseDialogComponent implements AfterViewInit {
 
   public save() {
     const changes = this.form.value;
+    const saveCourseObs$ = this.courseService.saveCourse(
+      this.course.id.toString(),
+      changes
+    );
 
-    this.courseService
-      .saveCourse(this.course.id.toString(), changes)
-      .subscribe(() => {
-        this.dialogRef.close(changes);
-      });
+    this.loadingService.loadUntilCompleted(saveCourseObs$).subscribe(() => {
+      this.dialogRef.close(changes);
+    });
   }
 
   public ngAfterViewInit() {}

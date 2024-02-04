@@ -5,6 +5,7 @@ import { map, tap } from "rxjs/operators";
 
 import { CourseService } from "../services/course.service";
 import { Course, sortCoursesBySeqNo } from "../model/course";
+import { loadingService } from "../services/loading.service";
 
 @Component({
   selector: "home",
@@ -15,7 +16,10 @@ export class HomeComponent implements OnInit {
   public beginnerCourses$: Observable<Course[]>;
   public advancedCourses$: Observable<Course[]>;
 
-  constructor(private readonly coureService: CourseService) {}
+  constructor(
+    private readonly coureService: CourseService,
+    private readonly loadingService: loadingService
+  ) {}
 
   private filterByCategory(category: string, courses: Course[]) {
     return courses
@@ -25,12 +29,13 @@ export class HomeComponent implements OnInit {
 
   public loadAllCourses() {
     const courses$ = this.coureService.loadAllCourses();
+    const loadingObs$ = this.loadingService.loadUntilCompleted(courses$);
 
-    this.beginnerCourses$ = courses$.pipe(
+    this.beginnerCourses$ = loadingObs$.pipe(
       map(this.filterByCategory.bind(this, "BEGINNER"))
     );
 
-    this.advancedCourses$ = courses$.pipe(
+    this.advancedCourses$ = loadingObs$.pipe(
       map(this.filterByCategory.bind(this, "ADVANCED"))
     );
   }
