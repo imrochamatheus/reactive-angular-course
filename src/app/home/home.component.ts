@@ -1,7 +1,7 @@
 import { Component, OnInit } from "@angular/core";
 
 import { Observable } from "rxjs";
-import { map } from "rxjs/operators";
+import { map, tap } from "rxjs/operators";
 
 import { CourseService } from "../services/course.service";
 import { Course, sortCoursesBySeqNo } from "../model/course";
@@ -23,7 +23,7 @@ export class HomeComponent implements OnInit {
       .sort(sortCoursesBySeqNo);
   }
 
-  public ngOnInit(): void {
+  public loadAllCourses() {
     const courses$ = this.coureService.loadAllCourses();
 
     this.beginnerCourses$ = courses$.pipe(
@@ -33,5 +33,9 @@ export class HomeComponent implements OnInit {
     this.advancedCourses$ = courses$.pipe(
       map(this.filterByCategory.bind(this, "ADVANCED"))
     );
+  }
+
+  public ngOnInit(): void {
+    this.loadAllCourses();
   }
 }
