@@ -1,46 +1,44 @@
-import {Component, OnInit} from '@angular/core';
-import {Course, sortCoursesBySeqNo} from '../model/course';
-import {interval, noop, Observable, of, throwError, timer} from 'rxjs';
-import {catchError, delay, delayWhen, filter, finalize, map, retryWhen, shareReplay, tap} from 'rxjs/operators';
-import {HttpClient} from '@angular/common/http';
-import {MatDialog, MatDialogConfig} from '@angular/material/dialog';
-import {CourseDialogComponent} from '../course-dialog/course-dialog.component';
-
+import { Component, OnInit } from "@angular/core";
+import { Course, sortCoursesBySeqNo } from "../model/course";
+import { Observable } from "rxjs";
+import { map } from "rxjs/operators";
+import { MatDialog, MatDialogConfig } from "@angular/material/dialog";
+import { CourseDialogComponent } from "../course-dialog/course-dialog.component";
+import { CourseService } from "../services/course.service";
 
 @Component({
-  selector: 'home',
-  templateUrl: './home.component.html',
-  styleUrls: ['./home.component.css']
+  selector: "home",
+  templateUrl: "./home.component.html",
+  styleUrls: ["./home.component.css"],
 })
 export class HomeComponent implements OnInit {
+  public beginnerCourses$: Observable<Course[]>;
+  public advancedCourses$: Observable<Course[]>;
 
-  beginnerCourses: Course[];
+  constructor(
+    private readonly coureService: CourseService,
+    private readonly dialog: MatDialog
+  ) {}
 
-  advancedCourses: Course[];
-
-
-  constructor(private http: HttpClient, private dialog: MatDialog) {
-
+  private filterByCategory(category: string, courses: Course[]) {
+    return courses
+      .filter((course) => course.category === category)
+      .sort(sortCoursesBySeqNo);
   }
 
-  ngOnInit() {
+  public ngOnInit(): void {
+    const courses$ = this.coureService.loadAllCourses();
 
-    this.http.get('/api/courses')
-      .subscribe(
-        res => {
+    this.beginnerCourses$ = courses$.pipe(
+      map(this.filterByCategory.bind(this, "BEGINNER"))
+    );
 
-          const courses: Course[] = res["payload"].sort(sortCoursesBySeqNo);
-
-          this.beginnerCourses = courses.filter(course => course.category == "BEGINNER");
-
-          this.advancedCourses = courses.filter(course => course.category == "ADVANCED");
-
-        });
-
+    this.advancedCourses$ = courses$.pipe(
+      map(this.filterByCategory.bind(this, "ADVANCED"))
+    );
   }
 
   editCourse(course: Course) {
-
     const dialogConfig = new MatDialogConfig();
 
     dialogConfig.disableClose = true;
@@ -50,11 +48,5 @@ export class HomeComponent implements OnInit {
     dialogConfig.data = course;
 
     const dialogRef = this.dialog.open(CourseDialogComponent, dialogConfig);
-
   }
-
 }
-
-
-
-
