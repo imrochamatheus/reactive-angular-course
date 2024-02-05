@@ -3,17 +3,19 @@ import { FormBuilder, Validators, FormGroup } from "@angular/forms";
 import { MAT_DIALOG_DATA, MatDialogRef } from "@angular/material/dialog";
 
 import * as moment from "moment";
-import { finalize, tap } from "rxjs/operators";
+import { catchError, finalize, tap } from "rxjs/operators";
 
 import { Course } from "../model/course";
 import { CourseService } from "../services/course.service";
 import { loadingService } from "../services/loading.service";
+import { MessagesService } from "../messages/messages.service";
+import { throwError } from "rxjs";
 
 @Component({
   selector: "course-dialog",
   templateUrl: "./course-dialog.component.html",
   styleUrls: ["./course-dialog.component.css"],
-  providers: [loadingService],
+  providers: [loadingService, MessagesService],
 })
 export class CourseDialogComponent implements AfterViewInit {
   public form: FormGroup;
@@ -23,6 +25,7 @@ export class CourseDialogComponent implements AfterViewInit {
     private readonly fb: FormBuilder,
     private readonly courseService: CourseService,
     private readonly loadingService: loadingService,
+    private readonly messagesService: MessagesService,
     private readonly dialogRef: MatDialogRef<CourseDialogComponent>,
 
     @Inject(MAT_DIALOG_DATA) course: Course
@@ -43,10 +46,16 @@ export class CourseDialogComponent implements AfterViewInit {
 
   public save() {
     const changes = this.form.value;
-    const saveCourseObs$ = this.courseService.saveCourse(
-      this.course.id.toString(),
-      changes
-    );
+    const saveCourseObs$ = this.courseService
+      .saveCourse(this.course.id.toString(), changes)
+      .pipe(
+        catchError((err) => {
+          const message = "Could not possible edit this course!";
+          this.messagesService.showErrors(message, "Another message!");
+
+          throw throwError(err);
+        })
+      );
 
     this.loadingService.loadUntilCompleted(saveCourseObs$).subscribe(() => {
       this.dialogRef.close(changes);
